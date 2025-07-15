@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Malla Interactiva UPC</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      color: #004080;
+    }
+    .cycle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .course {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background-color: #cce5ff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .course.completed {
+      background-color: #ccc;
+      text-decoration: line-through;
+    }
+    .course.locked {
+      background-color: #eee;
+      color: #888;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malla Interactiva Ingeniería Civil - UPC</h1>
+  <div id="malla"></div>
+
+  <script>
+    const cursos = [
+      {id:'C1', nombre:'Aprendizaje Estratégico y Liderazgo', ciclo:1, prereqs:[]},
+      {id:'C2', nombre:'Crítica y Comunicación', ciclo:1, prereqs:[]},
+      {id:'C3', nombre:'Introducción a la Ingeniería Civil', ciclo:1, prereqs:[]},
+      {id:'C4', nombre:'Matemática Básica', ciclo:1, prereqs:[]},
+      {id:'C5', nombre:'Pensamiento Crítico Aplicado', ciclo:1, prereqs:[]},
+      {id:'C6', nombre:'Sistemas y Sociedad', ciclo:1, prereqs:[]},
+      {id:'C7', nombre:'Cálculo I', ciclo:2, prereqs:['C4']},
+      {id:'C8', nombre:'Dibujo Asistido por el Computador', ciclo:2, prereqs:['C4']},
+      {id:'C9', nombre:'Química', ciclo:2, prereqs:['C4']},
+      {id:'C10', nombre:'Seminario de Investigación Académica', ciclo:2, prereqs:[]},
+      {id:'C11', nombre:'Electivo', ciclo:2, prereqs:[]},
+      {id:'C12', nombre:'Cálculo II', ciclo:3, prereqs:['C7']},
+      {id:'C13', nombre:'Estadística', ciclo:3, prereqs:['C7']},
+      {id:'C14', nombre:'Física I', ciclo:3, prereqs:['C7']},
+      {id:'C15', nombre:'Materiales de Construcción', ciclo:3, prereqs:['C3','C4','C9']},
+      {id:'C16', nombre:'Topografía', ciclo:3, prereqs:['C8','C4']},
+      {id:'C17', nombre:'Ecuaciones Diferenciales y Álgebra Lineal', ciclo:4, prereqs:['C12']},
+      {id:'C18', nombre:'Estática', ciclo:4, prereqs:['C14']},
+      {id:'C19', nombre:'Física II', ciclo:4, prereqs:['C14']},
+      {id:'C20', nombre:'Tecnología del Concreto', ciclo:4, prereqs:['C15']},
+      {id:'C21', nombre:'Electivo', ciclo:4, prereqs:[]},
+      {id:'C22', nombre:'Construcción I', ciclo:5, prereqs:['C13','C20']},
+      {id:'C23', nombre:'Dinámica', ciclo:5, prereqs:['C12','C18']},
+      {id:'C24', nombre:'Ingeniería de Carreteras', ciclo:5, prereqs:['C12','C16']},
+      {id:'C25', nombre:'Mecánica de Materiales', ciclo:5, prereqs:['C12','C18']},
+      {id:'C26', nombre:'Mecánica de Suelos', ciclo:5, prereqs:['C12','C18']},
+      {id:'C27', nombre:'Análisis Estructural', ciclo:6, prereqs:['C25']},
+      {id:'C28', nombre:'Análisis Numérico para Ingenieros Civil', ciclo:6, prereqs:['C23','C17']},
+      {id:'C29', nombre:'Ingeniería de Cimentaciones', ciclo:6, prereqs:['C26']},
+      {id:'C30', nombre:'Mecánica de Fluidos', ciclo:6, prereqs:['C23','C17']},
+      {id:'C31', nombre:'Modelación de Edificaciones', ciclo:6, prereqs:['C22']},
+      {id:'C32', nombre:'Comportamiento y Diseño en Concreto', ciclo:7, prereqs:['C27']},
+      {id:'C33', nombre:'Construcción II', ciclo:7, prereqs:['C31']},
+      {id:'C34', nombre:'Costos y Presupuestos', ciclo:7, prereqs:['C22']},
+      {id:'C35', nombre:'Hidráulica de Canales', ciclo:7, prereqs:['C30']},
+      {id:'C36', nombre:'Ingeniería de Tránsito', ciclo:7, prereqs:['C24','C26']},
+      {id:'C38', nombre:'Planificación y Control de Obras', ciclo:8, prereqs:['C34']},
+      {id:'C39', nombre:'Seminario de Investigación Académica', ciclo:8, prereqs:[]},
+      {id:'C40', nombre:'Taller de Tesis', ciclo:8, prereqs:[]},
+      {id:'C41', nombre:'Electivo', ciclo:8, prereqs:[]},
+      {id:'C41B', nombre:'Electivo', ciclo:8, prereqs:[]},
+      {id:'C41C', nombre:'Electivo', ciclo:8, prereqs:[]},
+      {id:'C42', nombre:'Gerencia de Proyectos de Construcción', ciclo:9, prereqs:[]},
+      {id:'C43', nombre:'Ingeniería Sismo-Resistente', ciclo:9, prereqs:[]},
+      {id:'C44', nombre:'Productividad en Obras', ciclo:9, prereqs:[]},
+      {id:'C45', nombre:'Trabajo de Investigación I', ciclo:9, prereqs:[]},
+      {id:'C46', nombre:'Electivo', ciclo:9, prereqs:[]},
+      {id:'C47', nombre:'CTI Trabajo De Investigación II', ciclo:10, prereqs:[]},
+      {id:'C48', nombre:'Electivo', ciclo:10, prereqs:[]}
+    ];
+
+    let completados = JSON.parse(localStorage.getItem('completados') || '[]');
+    let editedNames = JSON.parse(localStorage.getItem('nombresEditados') || '{}');
+
+    function toggleCurso(e) {
+      const id = e.target.id;
+      const index = completados.indexOf(id);
+      if (index === -1) completados.push(id);
+      else completados.splice(index, 1);
+      localStorage.setItem('completados', JSON.stringify(completados));
+      actualizarVista();
+    }
+
+    function editarNombre(e) {
+      const id = e.target.id;
+      const nuevo = prompt("Nuevo nombre para el curso:", e.target.textContent);
+      if (nuevo) {
+        editedNames[id] = nuevo;
+        localStorage.setItem('nombresEditados', JSON.stringify(editedNames));
+        crearMalla();
+      }
+    }
+
+    function actualizarVista() {
+      for (let curso of cursos) {
+        const btn = document.getElementById(curso.id);
+        const prereqsCompletos = curso.prereqs.every(id => completados.includes(id));
+        if (completados.includes(curso.id)) {
+          btn.classList.add('completed');
+        } else {
+          btn.classList.remove('completed');
+        }
+        if (!prereqsCompletos && !completados.includes(curso.id)) {
+          btn.classList.add('locked');
+        } else {
+          btn.classList.remove('locked');
+        }
+      }
+    }
+
+    function crearMalla() {
+      const cont = document.getElementById('malla');
+      cont.innerHTML = '';
+      let cicloActual = 0;
+      for (let curso of cursos) {
+        if (curso.ciclo !== cicloActual) {
+          cicloActual = curso.ciclo;
+          const h2 = document.createElement('h2');
+          h2.textContent = `Ciclo ${cicloActual}`;
+          cont.appendChild(h2);
+          const div = document.createElement('div');
+          div.classList.add('cycle');
+          div.id = `cycle-${cicloActual}`;
+          cont.appendChild(div);
+        }
+        const contCiclo = document.getElementById(`cycle-${cicloActual}`);
+        const btn = document.createElement('button');
+        btn.textContent = editedNames[curso.id] || curso.nombre;
+        btn.id = curso.id;
+        btn.classList.add('course');
+        btn.onclick = toggleCurso;
+        btn.ondblclick = editarNombre;
+        contCiclo.appendChild(btn);
+      }
+      actualizarVista();
+    }
+
+    window.onload = crearMalla;
+  </script>
+</body>
+</html>
